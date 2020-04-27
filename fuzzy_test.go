@@ -16,6 +16,20 @@ func TestMain(t *testing.T) {
 	}
 }
 
+func TestMinimalSearch(t *testing.T) {
+	names := []string{"super man", "super noel", "super du"}
+	results := SearchOnce("perdu", &names, Options{Sort: true, AllowedTypos: 5, Normalize: true})
+	log.Println("TestMinimalSearch", results)
+}
+
+func TestMinimalSearchCache(t *testing.T) {
+	names := []string{"super man", "super noel", "super du"}
+	options := Options{Sort: true, AllowedTypos: 5, Normalize: true}
+	cacheTargets := Prepare(&names, options)
+	results := Search("perdu", cacheTargets, options)
+	log.Println("TestMinimalSearchCache", results)
+}
+
 func TestCacheSearch(t *testing.T) {
 	d, _ := ioutil.ReadFile("sample.csv")
 	names := strings.Split(string(d), "\n")

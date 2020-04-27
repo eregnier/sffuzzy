@@ -17,6 +17,22 @@ make
 
 Usage samples are in [test.go](test.go)
 
+A minimal usage code below:
+
+```go
+  //One shot search
+  names := []string{"super man", "super noel", "super du"}
+  results := SearchOnce("perdu", &names, Options{Sort: true, AllowedTypos: 5, Normalize: true})
+```
+
+```go
+  //Use search cache for performance
+  names := []string{"super man", "super noel", "super du"}
+  options := Options{Sort: true, AllowedTypos: 5, Normalize: true}
+  cacheTargets := Prepare(&names, options)
+  results := Search("perdu", cacheTargets, options)
+```
+
 ## Performances
 
 The given sample file is a flat csv loaded as string list.
