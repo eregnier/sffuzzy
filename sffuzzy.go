@@ -1,4 +1,4 @@
-package main
+package sffuzzy
 
 import (
 	"sort"
