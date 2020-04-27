@@ -10,10 +10,12 @@ This library is a simple fuzzy search with unicode normalization and an arbitrar
 git clone https://github.com/eregnier/simple-fast-fuzzy
 cd simple-fast-fuzzy
 go get
-make
+make test-trace
 ```
 
 ## Usage
+
+`go get github.com/eregnier/simple-fast-fuzzy`
 
 Usage samples are in [test.go](test.go)
 
@@ -22,16 +24,30 @@ A minimal usage code below:
 ```go
   //One shot search
   names := []string{"super man", "super noel", "super du"}
-  results := SearchOnce("perdu", &names, Options{Sort: true, AllowedTypos: 5, Normalize: true})
+  results := fuzzy.SearchOnce("perdu", &names, fuzzy.Options{Sort: true, AllowedTypos: 5, Normalize: true})
 ```
 
 ```go
   //Use search cache for performance
   names := []string{"super man", "super noel", "super du"}
-  options := Options{Sort: true, AllowedTypos: 5, Normalize: true}
-  cacheTargets := Prepare(&names, options)
-  results := Search("perdu", cacheTargets, options)
+  options := fuzzy.Options{Sort: true, AllowedTypos: 5, Normalize: true}
+  cacheTargets := fuzzy.Prepare(&names, options)
+  results := fuzzy.Search("perdu", cacheTargets, options)
 ```
+
+## Options
+
+```go
+  options := fuzzy.Options{Sort: true, AllowedTypos: 5, Normalize: true}
+```
+
+This options structure have the following options
+
+**Prop**|**Type**|**Description**
+:-----:|:-----:|:-----:
+`Sort`|bool|order result depending on results score
+`Normalize`|bool|handle searches in texts with special characters. Make search more flexible / less strict
+`AllowedTypos`|int|how many missing characters are allowed in search token comparison. changes complete and score results
 
 ## Performances
 
