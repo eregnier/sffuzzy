@@ -63,6 +63,11 @@ func TestCacheSearch(t *testing.T) {
 	log.Println(" + Cached searches")
 	log.Println(justSearch("san fransisco", deltaFirstSearch, t).Results[0:5])
 	log.Println(justSearch("mumbai", deltaFirstSearch, t).Results[0:5])
+	log.Println(justSearch("hong kong", deltaFirstSearch, t).Results[0:5])
+	log.Println(justSearch("agadez", deltaFirstSearch, t).Results[0:5])
+	log.Println(justSearch("Palma", deltaFirstSearch, t).Results[0:5])
+	log.Println(justSearch("sucre bolivia", deltaFirstSearch, t).Results[0:5])
+	log.Println(justSearch("ibb yemen", deltaFirstSearch, t).Results[0:5])
 }
 
 func TestSearchOnce(t *testing.T) {
