@@ -16,6 +16,11 @@ func TestMain(t *testing.T) {
 	}
 }
 
+func computeDuration(s int64) float64 {
+	duration := float64((time.Now().UnixNano()-s)/int64(time.Nanosecond)) / 1000000.0
+	log.Printf(" 🕑 Duration: %fms", duration)
+	return duration
+}
 func TestMinimalSearch(t *testing.T) {
 	names := []string{"super man", "super noel", "super du"}
 	results := SearchOnce("perdu", &names, Options{Sort: true, AllowedTypos: 5, Normalize: true})
@@ -36,20 +41,18 @@ func TestCacheSearch(t *testing.T) {
 	search := "osakajapan"
 	options := Options{Sort: true, AllowedTypos: 5, Normalize: false}
 
-	log.Println("\n + Perform cache search, first search is slower.")
+	log.Println(" + Cache search, first search is slower.")
 
 	//First search with manual caching, this is slower
 	s := time.Now().UnixNano()
 	cacheTargets := Prepare(&names, options)
 	Search(search, cacheTargets, options)
-	deltaFirstSearch := (time.Now().UnixNano() - s) / int64(time.Millisecond)
-	log.Println("duration ms>", deltaFirstSearch)
+	deltaFirstSearch := computeDuration(s)
 
-	justSearch := func(search string, deltaFirstSearch int64, t *testing.T) *SearchResult {
+	justSearch := func(search string, deltaFirstSearch float64, t *testing.T) *SearchResult {
 		s = time.Now().UnixNano()
 		result := Search(search, cacheTargets, options)
-		deltaCacheSearch := (time.Now().UnixNano() - s) / int64(time.Millisecond)
-		log.Println("duration ms>", deltaCacheSearch)
+		deltaCacheSearch := computeDuration(s)
 		if float64(deltaCacheSearch) > float64(deltaFirstSearch/2) {
 			t.Errorf("Expected cache search is at least 2 times faster than first search")
 		}
@@ -57,12 +60,13 @@ func TestCacheSearch(t *testing.T) {
 	}
 
 	//Fast subsequents searches
-	log.Println(" + Perform cached searches")
+	log.Println(" + Cached searches")
 	log.Println(justSearch("san fransisco", deltaFirstSearch, t).Results[0:5])
 	log.Println(justSearch("mumbai", deltaFirstSearch, t).Results[0:5])
 }
 
 func TestSearchOnce(t *testing.T) {
+	log.Println(" + Search all at once")
 
 	d, _ := ioutil.ReadFile("sample.csv")
 	names := strings.Split(string(d), "\n")
@@ -71,7 +75,7 @@ func TestSearchOnce(t *testing.T) {
 
 	s := time.Now().UnixNano()
 	results := SearchOnce(search, &names, options)
-	log.Println("duration ms>", (time.Now().UnixNano()-s)/int64(time.Millisecond))
+	computeDuration(s)
 
 	tables := []struct {
 		Target     string

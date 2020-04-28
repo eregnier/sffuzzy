@@ -46,16 +46,20 @@ type CacheTarget struct {
 	cache  []string
 }
 
+//Unicode clean callback
+func cleanUnicode(r rune) bool {
+	return unicode.Is(unicode.Mn, r) // Mn: nonspacing marks
+}
+
 //Prepare data set for multi searches
 func Prepare(targets *[]string, options Options) *[]CacheTarget {
 
 	cacheTargets := make([]CacheTarget, len(*targets))
+
 	for i, target := range *targets {
 		result := target
 		if options.Normalize {
-			t := transform.Chain(norm.NFD, transform.RemoveFunc(func(r rune) bool {
-				return unicode.Is(unicode.Mn, r) // Mn: nonspacing marks
-			}), norm.NFC)
+			t := transform.Chain(norm.NFD, transform.RemoveFunc(cleanUnicode), norm.NFC)
 			result, _, _ = transform.String(t, target)
 		}
 		cacheTargets[i] = CacheTarget{target: target, cache: strings.Split(strings.ToLower(result), "")}
