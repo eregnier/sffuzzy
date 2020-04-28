@@ -7,15 +7,14 @@ This library is a simple fuzzy search with unicode normalization and an arbitrar
 ## Test the library
 
 ```bash
-git clone https://github.com/eregnier/simple-fast-fuzzy
-cd simple-fast-fuzzy
-go get
+git clone https://github.com/eregnier/sffuzzy
+cd ssfuzzy
 make test-trace
 ```
 
 ## Usage
 
-`go get github.com/eregnier/simple-fast-fuzzy`
+`go get github.com/eregnier/sffuzzy`
 
 Usage samples are in [test.go](test.go)
 
@@ -66,8 +65,18 @@ The following code [test.go](test.go)
 Have the following output
 
 ```bash
-duration ms> 44
-[
+2020/04/28 12:00:11 TestMinimalSearch &{1 [{super du 5 5 1 true} {super man 3 3 4 false} {super noel 3 3 5 false}] 5}
+2020/04/28 12:00:11 TestMinimalSearchCache &{1 [{super du 5 5 1 true} {super man 3 3 4 false} {super noel 3 3 5 false}] 5}
+2020/04/28 12:00:11  + Cache search, first search is slower.
+2020/04/28 12:00:11  🕑 Duration: 8.699330ms
+2020/04/28 12:00:11  + Cached searches
+2020/04/28 12:00:11  🕑 Duration: 2.529481ms
+2020/04/28 12:00:11 [{San Francisco;Argentina 9 9 5 false} {San Francisco de Macorís;Dominican Republic 9 9 5 false} {San Francisco;United States 9 9 5 false} {San Francisco;El Salvador 9 9 5 false} {San Fernando;Philippines 8 8 5 false}]
+2020/04/28 12:00:11  🕑 Duration: 1.687194ms
+2020/04/28 12:00:11 [{Mumbai;India 7 6 0 true} {Mayumba;Gabon 5 5 5 false} {Mumbwa;Zambia 5 5 5 false} {Capenda Camulemba;Angola 5 5 5 false} {Namutumba;Uganda 5 5 5 false}]
+2020/04/28 12:00:11  + Search all at once
+2020/04/28 12:00:11  🕑 Duration: 44.209230ms
+2020/04/28 12:00:11 [
   {
     "target": "Ōsaka;Japan",
     "score": 10,
@@ -139,15 +148,8 @@ duration ms> 44
     "complete": false
   }
 ]
-
- + Perform cache search, first search is slower.
-duration ms> 11
- + Perform cached searches
-duration ms> 2
-[{San Francisco;Argentina 9 9 5 false} {San Francisco de Macorís;Dominican Republic 9 9 5 false} {San Francisco;United States 9 9 5 false} {San Francisco;El Salvador 9 9 5 false} {San Fernando;Philippines 8 8 5 false}]
-duration ms> 1
-[{Mumbai;India 7 6 0 true} {Mayumba;Gabon 5 5 5 false} {Mumbwa;Zambia 5 5 5 false} {Capenda Camulemba;Angola 5 5 5 false} {Namutumba;Uganda 5 5 5 false}]
-
+PASS
+ok  	_/home/utopman/sources/sffuzzy	0.060s
 ```
 
 ## Licence
