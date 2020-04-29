@@ -13,16 +13,15 @@ var noResults []string
 
 // Options : Search options
 type Options struct {
-	Sort         bool
-	AllowedTypos int
-	Normalize    bool
+	Sort      bool
+	Normalize bool
+	Limit     int
 }
 
 // SearchResult : Current search results wrapper
 type SearchResult struct {
-	TotalComplete int               `json:"totalComplete"`
-	Results       []algorithmResult `json:"results"`
-	BestScore     int               `json:"bestScore"`
+	Results   []algorithmResult `json:"results"`
+	BestScore int               `json:"bestScore"`
 }
 
 // algorithmResult : Data generated on string evaluation
@@ -31,7 +30,6 @@ type algorithmResult struct {
 	Score      int    `json:"score"`
 	MatchCount int    `json:"matchCount"`
 	Typos      int    `json:"typos"`
-	Complete   bool   `json:"complete"`
 }
 
 // batchItem : handles item range to process per batch
@@ -44,6 +42,7 @@ type batchItem struct {
 type CacheTarget struct {
 	target string
 	cache  []string
+	len    int
 }
 
 type searchTerm struct {
@@ -71,16 +70,17 @@ func Prepare(targets *[]string, options Options) *[]CacheTarget {
 
 	for i, target := range *targets {
 		preparedTerm := strings.Split(normalize(target, options), "")
-		cacheTargets[i] = CacheTarget{target: target, cache: preparedTerm}
+		cacheTargets[i] = CacheTarget{target: target, cache: preparedTerm, len: len(preparedTerm)}
 	}
 	return &cacheTargets
 }
 
-func prepareSearch(search string, options Options) [][]searchTerm {
+func prepareSearch(search string, options Options) []searchTerm {
 	searchTerms := strings.Split(normalize(search, options), " ")
-	result := make([][]searchTerm, len(searchTerms))
+	result := make([]searchTerm, len(searchTerms))
 	for x, term := range searchTerms {
 		result[x].term = strings.Split(term, "")
+		result[x].len = len(term)
 	}
 	return result
 }
@@ -98,19 +98,25 @@ func Search(search string, cacheTargets *[]CacheTarget, options Options) *Search
 	}
 
 	preparedSearch := prepareSearch(search, options)
-	searchLen := len(preparedSearch)
 
 	targetLen := len(*cacheTargets)
 	results := make([]algorithmResult, targetLen)
-	resultWrapper := SearchResult{TotalComplete: 0, Results: results, BestScore: 0}
+	resultWrapper := SearchResult{Results: results, BestScore: 0}
 
 	for i, cacheTarget := range *cacheTargets {
-		result := algorithmResult{Target: cacheTarget.target, Score: 0, Typos: 0, MatchCount: 0, Complete: false}
-		algorithm(preparedSearch, &cacheTarget.cache, &result, options)
-		if result.Complete {
-			resultWrapper.TotalComplete++
+		result := algorithmResult{Target: cacheTarget.target, Score: 0, Typos: 0, MatchCount: 0}
+		algorithm(preparedSearch, cacheTarget, &result, options)
+		accurateTokens := cacheTarget.len - result.MatchCount
+		if result.Typos < accurateTokens {
+			result.Score++
 		}
-		if result.Typos == 0 {
+		if result.Typos < accurateTokens/2 {
+			result.Score++
+		}
+		if result.Typos < accurateTokens*2 {
+			result.Score++
+		}
+		if result.Typos == 0 && result.MatchCount > 0 {
 			result.Score++
 		}
 		if result.Score > resultWrapper.BestScore {
@@ -123,36 +129,44 @@ func Search(search string, cacheTargets *[]CacheTarget, options Options) *Search
 			return results[i].Score > results[j].Score
 		})
 	}
+	if options.Limit > 0 && options.Limit < targetLen {
+		resultWrapper.Results = make([]algorithmResult, options.Limit)
+		for i, result := range results[:options.Limit] {
+			resultWrapper.Results[i] = result
+		}
+	}
 	return &resultWrapper
 }
 
-func algorithm(search [][]string, target *[]string, result *algorithmResult, options Options) {
+func algorithm(searchTerms []searchTerm, target CacheTarget, result *algorithmResult, options Options) {
 
-	targetLen := len(*target)
-	for _, term := range search {
+	for _, term := range searchTerms {
 		searchI := 0
-		targetI := 0
-		for {
-			if term[searchI] == (*target)[targetI] {
+		hasFirstMatch := false
+		currentTermMatchCount := 0
+		currentTermTypos := 0
+		for targetI := 0; targetI < target.len; targetI++ {
+			if term.term[searchI] == target.cache[targetI] {
+				hasFirstMatch = true
+				currentTermMatchCount++
 				result.MatchCount++
 				result.Score++
 				searchI++
-				if searchI == searchLen || result.MatchCount == searchLen {
-					result.Complete = true
-					return
-				}
 			} else {
-				if searchI != 0 {
+				if hasFirstMatch {
+					currentTermTypos++
 					result.Typos++
 				}
-				if result.MatchCount > 0 && (options.AllowedTypos != -1 && result.Typos >= options.AllowedTypos) {
-					return
-				}
 			}
-			targetI++
-			if searchI == searchLen || targetI == targetLen {
-				return
+			if searchI == term.len {
+				break
 			}
+		}
+		if currentTermMatchCount == term.len {
+			result.Score += 2
+		}
+		if currentTermTypos == 0 && currentTermMatchCount > 0 {
+			result.Score++
 		}
 	}
 

@@ -23,13 +23,13 @@ A minimal usage code below:
 ```go
   //One shot search
   names := []string{"super man", "super noel", "super du"}
-  results := fuzzy.SearchOnce("perdu", &names, fuzzy.Options{Sort: true, AllowedTypos: 5, Normalize: true})
+  results := fuzzy.SearchOnce("perdu", &names, fuzzy.Options{Sort: true, Limit: 5, Normalize: true})
 ```
 
 ```go
   //Use search cache for performance
   names := []string{"super man", "super noel", "super du"}
-  options := fuzzy.Options{Sort: true, AllowedTypos: 5, Normalize: true}
+  options := fuzzy.Options{Sort: true, Limit: 5, Normalize: true}
   cacheTargets := fuzzy.Prepare(&names, options)
   results := fuzzy.Search("perdu", cacheTargets, options)
 ```
@@ -37,16 +37,16 @@ A minimal usage code below:
 ## Options
 
 ```go
-  options := fuzzy.Options{Sort: true, AllowedTypos: 5, Normalize: true}
+  options := fuzzy.Options{Sort: true, Normalize: true, Limit: 10}
 ```
 
 This options structure have the following options
 
 **Prop**|**Type**|**Description**
 :-----:|:-----:|:-----:
-`Sort`|bool|order result depending on results score
-`Normalize`|bool|handle searches in texts with special characters. Make search more flexible / less strict
-`AllowedTypos`|int|how many missing characters are allowed in search token comparison. changes complete and score results
+`Sort`|bool|Orders result depending on results score
+`Normalize`|bool|Handles searches in texts with special characters. Make search more flexible / less strict
+`Limit`|int|Define how many results are kept un search return value
 
 ## Performances
 
@@ -65,91 +65,64 @@ The following code [test.go](test.go)
 Have the following output
 
 ```bash
-2020/04/28 12:00:11 TestMinimalSearch &{1 [{super du 5 5 1 true} {super man 3 3 4 false} {super noel 3 3 5 false}] 5}
-2020/04/28 12:00:11 TestMinimalSearchCache &{1 [{super du 5 5 1 true} {super man 3 3 4 false} {super noel 3 3 5 false}] 5}
-2020/04/28 12:00:11  + Cache search, first search is slower.
-2020/04/28 12:00:11  🕑 Duration: 8.699330ms
-2020/04/28 12:00:11  + Cached searches
-2020/04/28 12:00:11  🕑 Duration: 2.529481ms
-2020/04/28 12:00:11 [{San Francisco;Argentina 9 9 5 false} {San Francisco de Macorís;Dominican Republic 9 9 5 false} {San Francisco;United States 9 9 5 false} {San Francisco;El Salvador 9 9 5 false} {San Fernando;Philippines 8 8 5 false}]
-2020/04/28 12:00:11  🕑 Duration: 1.687194ms
-2020/04/28 12:00:11 [{Mumbai;India 7 6 0 true} {Mayumba;Gabon 5 5 5 false} {Mumbwa;Zambia 5 5 5 false} {Capenda Camulemba;Angola 5 5 5 false} {Namutumba;Uganda 5 5 5 false}]
-2020/04/28 12:00:11  + Search all at once
-2020/04/28 12:00:11  🕑 Duration: 44.209230ms
-2020/04/28 12:00:11 [
+2020/04/29 02:07:57 TestMinimalSearch &{[{super du 8 5 1} {super man 3 3 4} {super noel 3 3 5}] 8}
+2020/04/29 02:07:57 TestMinimalSearchCache &{[{super du 8 5 1} {super man 3 3 4} {super noel 3 3 5}] 8}
+2020/04/29 02:07:57  + Cache search, first search is slower.
+2020/04/29 02:07:57  🕑 Duration: 9.435114ms
+2020/04/29 02:07:57  + Cached searches
+2020/04/29 02:07:57  🕑 Duration: 3.883137ms
+2020/04/29 02:07:57 [{San Francisco;United States 13 10 16} {South San Francisco;United States 12 10 22} {St. Francis;United States 12 10 19}]
+2020/04/29 02:07:57  🕑 Duration: 2.100023ms
+2020/04/29 02:07:57 [{Mumbai;India 11 6 0} {Mumbwa;Zambia 8 6 6} {Mount Gambier;Australia 8 6 16}]
+2020/04/29 02:07:57  🕑 Duration: 3.992907ms
+2020/04/29 02:07:57 [{Hong Kong;Hong Kong 16 8 0} {Xiangkhoang;Laos 13 8 3} {Mokhotlong;Lesotho 12 8 7}]
+2020/04/29 02:07:57  🕑 Duration: 2.312343ms
+2020/04/29 02:07:57 [{Agadez;Niger 11 6 0} {Várzea Grande;Brazil 8 6 7} {Altagracia de Orituco;Venezuela 8 6 21}]
+2020/04/29 02:07:57  🕑 Duration: 2.034594ms
+2020/04/29 02:07:57 [{Palmas;Brazil 10 5 0} {La Palma;Panama 10 5 0} {Las Palmas de Gran Canaria;Spain 10 5 0}]
+2020/04/29 02:07:57  🕑 Duration: 4.029126ms
+2020/04/29 02:07:57 [{Sucre;Bolivia 20 12 0} {Quime;Bolivia 13 7 0} {Villazón;Bolivia 13 7 0}]
+2020/04/29 02:07:57  🕑 Duration: 3.910717ms
+2020/04/29 02:07:57 [{Ibb;Yemen 16 8 0} {Ibb;Yemen 16 8 0} {Dhamār;Yemen 11 5 0}]
+2020/04/29 02:07:57  🕑 Duration: 3.826816ms
+2020/04/29 02:07:57 [{West View;United States 16 8 0} {Westview;United States 16 8 0} {Viera West;United States 14 8 3}]
+2020/04/29 02:07:57  + Search all at once
+2020/04/29 02:07:57  🕑 Duration: 44.714400ms
+2020/04/29 02:07:57 Print plain unmarshaled json results
+2020/04/29 02:07:57 [
   {
     "target": "Ōsaka;Japan",
-    "score": 10,
+    "score": 13,
     "matchCount": 10,
-    "typos": 1,
-    "complete": true
+    "typos": 1
   },
   {
-    "target": "Yuzhno-Sakhalinsk;Russia",
+    "target": "Northwest Harborcreek;United States",
     "score": 5,
     "matchCount": 5,
-    "typos": 5,
-    "complete": false
+    "typos": 29
   },
   {
     "target": "Oshakati;Namibia",
     "score": 5,
     "matchCount": 5,
-    "typos": 5,
-    "complete": false
+    "typos": 11
   },
   {
-    "target": "Makedonska Kamenica;Macedonia",
+    "target": "Colombo;Sri Lanka",
     "score": 5,
     "matchCount": 5,
-    "typos": 5,
-    "complete": false
+    "typos": 11
   },
   {
-    "target": "Zhosaly;Kazakhstan",
+    "target": "Coxsackie;United States",
     "score": 5,
     "matchCount": 5,
-    "typos": 5,
-    "complete": false
-  },
-  {
-    "target": "Osakarovka;Kazakhstan",
-    "score": 5,
-    "matchCount": 5,
-    "typos": 5,
-    "complete": false
-  },
-  {
-    "target": "Mombasa;Kenya",
-    "score": 4,
-    "matchCount": 4,
-    "typos": 5,
-    "complete": false
-  },
-  {
-    "target": "Korsakov;Russia",
-    "score": 4,
-    "matchCount": 4,
-    "typos": 5,
-    "complete": false
-  },
-  {
-    "target": "Moses Lake;United States",
-    "score": 4,
-    "matchCount": 4,
-    "typos": 5,
-    "complete": false
-  },
-  {
-    "target": "P’yŏngsan;Korea, North",
-    "score": 4,
-    "matchCount": 4,
-    "typos": 5,
-    "complete": false
+    "typos": 17
   }
 ]
 PASS
-ok  	_/home/utopman/sources/sffuzzy	0.060s
+ok  	_/home/utopman/sources/sffuzzy	0.083s
 ```
 
 ## Licence

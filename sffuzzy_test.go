@@ -23,13 +23,13 @@ func computeDuration(s int64) float64 {
 }
 func TestMinimalSearch(t *testing.T) {
 	names := []string{"super man", "super noel", "super du"}
-	results := SearchOnce("perdu", &names, Options{Sort: true, AllowedTypos: 5, Normalize: true})
+	results := SearchOnce("perdu", &names, Options{Sort: true, Normalize: true})
 	log.Println("TestMinimalSearch", results)
 }
 
 func TestMinimalSearchCache(t *testing.T) {
 	names := []string{"super man", "super noel", "super du"}
-	options := Options{Sort: true, AllowedTypos: 5, Normalize: true}
+	options := Options{Sort: true, Normalize: true}
 	cacheTargets := Prepare(&names, options)
 	results := Search("perdu", cacheTargets, options)
 	log.Println("TestMinimalSearchCache", results)
@@ -39,7 +39,7 @@ func TestCacheSearch(t *testing.T) {
 	d, _ := ioutil.ReadFile("sample.csv")
 	names := strings.Split(string(d), "\n")
 	search := "osakajapan"
-	options := Options{Sort: true, AllowedTypos: 5, Normalize: false}
+	options := Options{Sort: true, Normalize: false, Limit: 3}
 
 	log.Println(" + Cache search, first search is slower.")
 
@@ -61,13 +61,14 @@ func TestCacheSearch(t *testing.T) {
 
 	//Fast subsequents searches
 	log.Println(" + Cached searches")
-	log.Println(justSearch("san fransisco", deltaFirstSearch, t).Results[0:5])
-	log.Println(justSearch("mumbai", deltaFirstSearch, t).Results[0:5])
-	log.Println(justSearch("hong kong", deltaFirstSearch, t).Results[0:5])
-	log.Println(justSearch("agadez", deltaFirstSearch, t).Results[0:5])
-	log.Println(justSearch("Palma", deltaFirstSearch, t).Results[0:5])
-	log.Println(justSearch("sucre bolivia", deltaFirstSearch, t).Results[0:5])
-	log.Println(justSearch("ibb yemen", deltaFirstSearch, t).Results[0:5])
+	log.Println(justSearch("san fransisco", deltaFirstSearch, t).Results)
+	log.Println(justSearch("mumbai", deltaFirstSearch, t).Results)
+	log.Println(justSearch("hong kong", deltaFirstSearch, t).Results)
+	log.Println(justSearch("agadez", deltaFirstSearch, t).Results)
+	log.Println(justSearch("Palma", deltaFirstSearch, t).Results)
+	log.Println(justSearch("sucre bolivia", deltaFirstSearch, t).Results)
+	log.Println(justSearch("ibb yemen", deltaFirstSearch, t).Results)
+	log.Println(justSearch("west view", deltaFirstSearch, t).Results)
 }
 
 func TestSearchOnce(t *testing.T) {
@@ -76,7 +77,7 @@ func TestSearchOnce(t *testing.T) {
 	d, _ := ioutil.ReadFile("sample.csv")
 	names := strings.Split(string(d), "\n")
 	search := "osakajapan"
-	options := Options{Sort: true, AllowedTypos: 5, Normalize: true}
+	options := Options{Sort: true, Normalize: true, Limit: 5}
 
 	s := time.Now().UnixNano()
 	results := SearchOnce(search, &names, options)
@@ -87,13 +88,12 @@ func TestSearchOnce(t *testing.T) {
 		Score      int
 		MatchCount int
 		Typos      int
-		Complete   bool
 	}{
-		{"Ōsaka;Japan", 10, 10, 1, true},
-		{"Yuzhno-Sakhalinsk;Russia", 5, 5, 5, false},
-		{"Oshakati;Namibia", 5, 5, 5, false},
-		{"Makedonska Kamenica;Macedonia", 5, 5, 5, false},
-		{"Zhosaly;Kazakhstan", 5, 5, 5, false},
+		{"Ōsaka;Japan", 13, 10, 1},
+		{"Sri Jayewardenepura Kotte;Sri Lanka", 8, 5, 9},
+		{"South Salt Lake;United States", 7, 5, 23},
+		{"Vientiane;Laos", 7, 2, 0},
+		{"Chimboy Shahri;Uzbekistan", 7, 5, 15},
 	}
 	for x, result := range tables {
 		if result.Target != results.Results[x].Target {
@@ -108,12 +108,10 @@ func TestSearchOnce(t *testing.T) {
 		if result.Typos != results.Results[x].Typos {
 			t.Errorf("Expecting Typos to be %d got %d", result.Typos, results.Results[x].Typos)
 		}
-		if result.Complete != results.Results[x].Complete {
-			t.Errorf("Expecting Complete to be %t got %t", result.Complete, results.Results[x].Complete)
-		}
 
 	}
 
-	j, _ := json.MarshalIndent(results.Results[:10], "", "  ")
+	j, _ := json.MarshalIndent(results.Results, "", "  ")
+	log.Println("Print plain unmarshaled json results")
 	log.Println(string(j))
 }
