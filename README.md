@@ -125,6 +125,54 @@ PASS
 ok  	_/home/utopman/sources/sffuzzy	0.083s
 ```
 
+## The cli
+
+There is a simple cli bundled with this library which usage is in the executable help
+
+```bash
+go run cli.go --help
+Usage: cli [--limit LIMIT] [--sort] [--normalize] SEARCH
+
+Positional arguments:
+  SEARCH                 Search terms to find in given data
+
+Options:
+  --limit LIMIT, -l LIMIT
+                         Results limit, use -1 for no limit [default: 10]
+  --sort, -s             Whether or not results are sorted [default: true]
+  --normalize, -n        normalize search string and data string for searching. It fuzzy search with no accents/special characters [default: true]
+  --help, -h             display this help and exit
+
+```
+
+Here is a sample about how to use it from this repository sources
+
+```bash
+head ../sample.csv | go run cli.go -s=1 -l=3 "kol"
+[
+  {
+    "target": "Kolkata;India",
+    "score": 8,
+    "matchCount": 3,
+    "typos": 0
+  },
+  {
+    "target": "Tokyo;Japan",
+    "score": 2,
+    "matchCount": 2,
+    "typos": 7
+  },
+  {
+    "target": "Mexico City;Mexico",
+    "score": 2,
+    "matchCount": 0,
+    "typos": 0
+  }
+]
+```
+
+It just takes a flat newline separated database to query in stdin. Then it returns the json results as raw indented json depending on given query string and parameters
+
 ## Licence
 
 [MIT](LICENCE.md)
