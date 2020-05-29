@@ -26,10 +26,11 @@ type SearchResult struct {
 
 // algorithmResult : Data generated on string evaluation
 type algorithmResult struct {
-	Target     string `json:"target"`
-	Score      int    `json:"score"`
-	MatchCount int    `json:"matchCount"`
-	Typos      int    `json:"typos"`
+	Target          string `json:"target"`
+	Score           int    `json:"score"`
+	MatchCount      int    `json:"matchCount"`
+	Typos           int    `json:"typos"`
+	RelatedDocument string `json:"relatedDocument"`
 }
 
 // batchItem : handles item range to process per batch
@@ -40,14 +41,21 @@ type batchItem struct {
 
 // CacheTarget : data structure handling search payload cache
 type CacheTarget struct {
-	target string
-	cache  []string
-	len    int
+	target          string
+	cache           []string
+	len             int
+	relatedDocument string
 }
 
 type searchTerm struct {
 	term []string
 	len  int
+}
+
+// Target is a search element that holds a searchable token and a related arbitrary string document
+type Target struct {
+	token           string
+	relatedDocument string
 }
 
 //Unicode clean callback
@@ -64,13 +72,18 @@ func normalize(text string, options Options) string {
 }
 
 //Prepare data set for multi searches
-func Prepare(targets *[]string, options Options) *[]CacheTarget {
+func Prepare(targets *[]Target, options Options) *[]CacheTarget {
 
 	cacheTargets := make([]CacheTarget, len(*targets))
 
 	for i, target := range *targets {
-		preparedTerm := strings.Split(normalize(target, options), "")
-		cacheTargets[i] = CacheTarget{target: target, cache: preparedTerm, len: len(preparedTerm)}
+		preparedTerm := strings.Split(normalize(target.token, options), "")
+		cacheTargets[i] = CacheTarget{
+			target:          target.token,
+			cache:           preparedTerm,
+			len:             len(preparedTerm),
+			relatedDocument: target.relatedDocument,
+		}
 	}
 	return &cacheTargets
 }
@@ -86,7 +99,7 @@ func prepareSearch(search string, options Options) []searchTerm {
 }
 
 // SearchOnce : shorthand function to trigger search and caching at once
-func SearchOnce(search string, targets *[]string, options Options) *SearchResult {
+func SearchOnce(search string, targets *[]Target, options Options) *SearchResult {
 	cacheTargets := Prepare(targets, options)
 	return Search(search, cacheTargets, options)
 }
@@ -104,7 +117,7 @@ func Search(search string, cacheTargets *[]CacheTarget, options Options) *Search
 	resultWrapper := SearchResult{Results: results, BestScore: 0}
 
 	for i, cacheTarget := range *cacheTargets {
-		result := algorithmResult{Target: cacheTarget.target, Score: 0, Typos: 0, MatchCount: 0}
+		result := algorithmResult{Target: cacheTarget.target, Score: 0, Typos: 0, MatchCount: 0, RelatedDocument: cacheTarget.relatedDocument}
 		algorithm(preparedSearch, cacheTarget, &result, options)
 		accurateTokens := cacheTarget.len - result.MatchCount
 		if result.Typos < accurateTokens {

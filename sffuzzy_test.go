@@ -21,14 +21,48 @@ func computeDuration(s int64) float64 {
 	log.Printf(" 🕑 Duration: %fms", duration)
 	return duration
 }
+
+func getTargets() []Target {
+	d, _ := ioutil.ReadFile("sample.csv")
+	names := strings.Split(string(d), "\n")
+	targets := make([]Target, len(names))
+	for i, name := range names {
+		targets[i] = Target{token: name}
+	}
+	return targets
+}
+
 func TestMinimalSearch(t *testing.T) {
-	names := []string{"super man", "super noel", "super du"}
+	names := []Target{
+		Target{token: "super man"},
+		Target{token: "super noel"},
+		Target{token: "super du"},
+	}
 	results := SearchOnce("perdu", &names, Options{Sort: true, Normalize: true})
 	log.Println("TestMinimalSearch", results)
 }
 
+func TestRelatedDocuments(t *testing.T) {
+	names := []Target{
+		Target{token: "super man", relatedDocument: "A"},
+		Target{token: "super noel", relatedDocument: "B"},
+		Target{token: "super du", relatedDocument: "C"},
+	}
+	results := SearchOnce("perdu", &names, Options{Sort: true, Normalize: true})
+	log.Println("TestRelatedDocuments", results)
+	for i, document := range []string{"C", "A", "B"} {
+		if results.Results[i].RelatedDocument != document {
+			t.Errorf("Unable to find related document in result for search term %s", results.Results[i].Target)
+		}
+	}
+}
+
 func TestMinimalSearchCache(t *testing.T) {
-	names := []string{"super man", "super noel", "super du"}
+	names := []Target{
+		Target{token: "super man"},
+		Target{token: "super noel"},
+		Target{token: "super du"},
+	}
 	options := Options{Sort: true, Normalize: true}
 	cacheTargets := Prepare(&names, options)
 	results := Search("perdu", cacheTargets, options)
@@ -36,8 +70,7 @@ func TestMinimalSearchCache(t *testing.T) {
 }
 
 func TestCacheSearch(t *testing.T) {
-	d, _ := ioutil.ReadFile("sample.csv")
-	names := strings.Split(string(d), "\n")
+	targets := getTargets()
 	search := "osakajapan"
 	options := Options{Sort: true, Normalize: false, Limit: 3}
 
@@ -45,7 +78,7 @@ func TestCacheSearch(t *testing.T) {
 
 	//First search with manual caching, this is slower
 	s := time.Now().UnixNano()
-	cacheTargets := Prepare(&names, options)
+	cacheTargets := Prepare(&targets, options)
 	Search(search, cacheTargets, options)
 	deltaFirstSearch := computeDuration(s)
 
@@ -74,13 +107,12 @@ func TestCacheSearch(t *testing.T) {
 func TestSearchOnce(t *testing.T) {
 	log.Println(" + Search all at once")
 
-	d, _ := ioutil.ReadFile("sample.csv")
-	names := strings.Split(string(d), "\n")
+	targets := getTargets()
 	search := "osakajapan"
 	options := Options{Sort: true, Normalize: true, Limit: 5}
 
 	s := time.Now().UnixNano()
-	results := SearchOnce(search, &names, options)
+	results := SearchOnce(search, &targets, options)
 	computeDuration(s)
 
 	tables := []struct {
